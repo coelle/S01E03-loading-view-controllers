@@ -15,14 +15,11 @@ let sampleEpisode = Episode(id: "0", title: "initial")
 
 let sharedWebservice = Webservice()
 
-protocol Loading {
-	associatedtype ResourceType
-	var spinner: UIActivityIndicatorView {get}
-	func configure(value: ResourceType)
-}
+final class LoadingViewController: UIViewController {
+	let spinner = UIActivityIndicatorView(activityIndicatorStyle: .gray)
 
-extension Loading where Self: UIViewController {
-	func load(resource: Resource<ResourceType>) {
+	init<A>(resource: Resource<A>, build: @escaping (A) -> UIViewController) {
+		super.init(nibName: nil, bundle: nil)
 		spinner.startAnimating()
 		sharedWebservice.load(resource: resource, completion: {
 			[weak self] result in
@@ -32,36 +29,43 @@ extension Loading where Self: UIViewController {
 				print("No episode found yet")
 				return
 			}
-			self?.configure(value: value)
+			let viewController = build(value)
+			self?.add(content: viewController)
 		})
 	}
-}
 
-final class EpisodeDetailViewController: UIViewController, Loading {
-	let titleLabel = UILabel()
-	let spinner = UIActivityIndicatorView(activityIndicatorStyle: .gray)
-
-	convenience init(episode: Episode) {
-		self.init()
-		configure(value: episode)
-	}
-
-	func configure(value: Episode) {
-		titleLabel.text = value.title
-	}
-
-	convenience init(resource: Resource<Episode>) {
-		self.init()
-		load(resource: resource)
+	required init?(coder aDecoder: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
 	}
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
-
+		view.backgroundColor = .white
 		spinner.hidesWhenStopped = true
 		spinner.translatesAutoresizingMaskIntoConstraints = false
 		view.addSubview(spinner)
 		spinner.center(inView: view)
+	}
+
+	func add(content: UIViewController) {
+		addChildViewController(content)
+		view.addSubview(content.view)
+		content.view.translatesAutoresizingMaskIntoConstraints = false
+		content.view.constrainEdges(toMarginOf: view)
+		content.didMove(toParentViewController: self)
+	}
+}
+
+final class EpisodeDetailViewController: UIViewController {
+	let titleLabel = UILabel()
+
+	convenience init(episode: Episode) {
+		self.init()
+		titleLabel.text = episode.title
+	}
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
 
 		view.backgroundColor = .orange
 		view.addSubview(titleLabel)
@@ -71,7 +75,8 @@ final class EpisodeDetailViewController: UIViewController, Loading {
 }
 
 
-let episodesVC = EpisodeDetailViewController(resource: episodeResource)
+let episodesVC = LoadingViewController(resource: episodeResource,
+									   build: EpisodeDetailViewController.init)
 episodesVC.view.frame = CGRect(x: 0, y: 0, width: 250, height: 300)
 
 

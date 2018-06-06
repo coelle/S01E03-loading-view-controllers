@@ -48,7 +48,7 @@ final class EpisodeDetailViewController: UIViewController {
 		view.addSubview(spinner)
 		spinner.center(inView: view)
 
-		view.backgroundColor = .white
+		view.backgroundColor = .orange
 		view.addSubview(titleLabel)
 		titleLabel.translatesAutoresizingMaskIntoConstraints = false
 		titleLabel.constrainEdges(toMarginOf: view)

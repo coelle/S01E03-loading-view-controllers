@@ -18,6 +18,7 @@ let sharedWebservice = Webservice()
 
 final class EpisodeDetailViewController: UIViewController {
 	let titleLabel = UILabel()
+	let spinner = UIActivityIndicatorView(activityIndicatorStyle: .gray)
 
 	convenience init(episode: Episode) {
 		self.init()
@@ -26,8 +27,10 @@ final class EpisodeDetailViewController: UIViewController {
 
 	convenience init(resource: Resource<Episode>) {
 		self.init()
+		spinner.startAnimating()
 		sharedWebservice.load(resource: resource, completion: {
 			[weak self] result in
+			self?.spinner.stopAnimating()
 			guard let episode = result.value else {
 				// Better error handling
 				print("No episode found yet")
@@ -39,6 +42,12 @@ final class EpisodeDetailViewController: UIViewController {
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
+
+		spinner.hidesWhenStopped = true
+		spinner.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(spinner)
+		spinner.center(inView: view)
+
 		view.backgroundColor = .white
 		view.addSubview(titleLabel)
 		titleLabel.translatesAutoresizingMaskIntoConstraints = false

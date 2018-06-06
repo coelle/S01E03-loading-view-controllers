@@ -15,29 +15,44 @@ let sampleEpisode = Episode(id: "0", title: "initial")
 
 let sharedWebservice = Webservice()
 
+protocol Loading {
+	associatedtype ResourceType
+	var spinner: UIActivityIndicatorView {get}
+	func configure(value: ResourceType)
+}
 
-final class EpisodeDetailViewController: UIViewController {
+extension Loading where Self: UIViewController {
+	func load(resource: Resource<ResourceType>) {
+		spinner.startAnimating()
+		sharedWebservice.load(resource: resource, completion: {
+			[weak self] result in
+			self?.spinner.stopAnimating()
+			guard let value = result.value else {
+				// Better error handling
+				print("No episode found yet")
+				return
+			}
+			self?.configure(value: value)
+		})
+	}
+}
+
+final class EpisodeDetailViewController: UIViewController, Loading {
 	let titleLabel = UILabel()
 	let spinner = UIActivityIndicatorView(activityIndicatorStyle: .gray)
 
 	convenience init(episode: Episode) {
 		self.init()
-		titleLabel.text = episode.title
+		configure(value: episode)
+	}
+
+	func configure(value: Episode) {
+		titleLabel.text = value.title
 	}
 
 	convenience init(resource: Resource<Episode>) {
 		self.init()
-		spinner.startAnimating()
-		sharedWebservice.load(resource: resource, completion: {
-			[weak self] result in
-			self?.spinner.stopAnimating()
-			guard let episode = result.value else {
-				// Better error handling
-				print("No episode found yet")
-				return
-			}
-			self?.titleLabel.text = episode.title
-		})
+		load(resource: resource)
 	}
 
 	override func viewDidLoad() {
